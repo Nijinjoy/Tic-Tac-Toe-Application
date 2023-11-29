@@ -20,7 +20,7 @@ const HomeScreen = () => {
     const [resetBoard, setResetBoard] = useState(Array(9).fill(''))
     const [board, setBoard] = useState(resetBoard)
     const [currentPlayer, setCurrentPlayer] = useState("X")
-    const [winner, setWinner] = useState()
+    const [winner, setWinner] = useState(null)
 
     const resetGame = () => {
         setBoard(resetBoard)
@@ -43,7 +43,6 @@ const HomeScreen = () => {
             }
         }
     }
-
 
     return (
         <View style={{ flex: 1 }}>

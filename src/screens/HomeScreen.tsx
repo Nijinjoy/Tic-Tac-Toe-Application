@@ -1,7 +1,8 @@
 import { View, Text, Pressable, Alert } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import HeaderComponent from '../components/HeaderComponent'
 import { HEIGHT, WIDTH } from '../constants/Dimension'
+import { useNavigation } from '@react-navigation/native';
 
 const findWinner = (result) => {
     const possLines = [
@@ -17,10 +18,17 @@ const findWinner = (result) => {
 }
 
 const HomeScreen = () => {
+    const navigation = useNavigation()
     const [resetBoard, setResetBoard] = useState(Array(9).fill(''))
     const [board, setBoard] = useState(resetBoard)
     const [currentPlayer, setCurrentPlayer] = useState("X")
     const [winner, setWinner] = useState(null)
+
+    useEffect(() => {
+        setTimeout(() => {
+            navigation.navigate('ContactScreen')
+        }, 2000);
+    }, [])
 
     const resetGame = () => {
         setBoard(resetBoard)
@@ -46,7 +54,7 @@ const HomeScreen = () => {
 
     return (
         <View style={{ flex: 1 }}>
-            <HeaderComponent />
+            <HeaderComponent title="Tic Tac Toe" />
             <View style={{ justifyContent: "center", alignItems: "center" }}>
                 <Text style={{ fontWeight: "600", fontSize: 15, padding: HEIGHT * 0.02 }}>Welcome to Tic Tac Toe Game</Text>
                 <View style={{ flexWrap: "wrap", flexDirection: 'row', justifyContent: "center", marginHorizontal: WIDTH * 0.2 }}>
@@ -67,3 +75,13 @@ const HomeScreen = () => {
 }
 
 export default HomeScreen
+
+// const navigation = useNavigation()
+// useEffect(() => {
+//     setTimeout(() => {
+//         navigation.navigate('HomeScreen')
+//     }, 2000)
+// }, [])
+
+// import { useNavigation } from '@react-navigation/native'
+// import { Navigation } from 'react-native-navigation'

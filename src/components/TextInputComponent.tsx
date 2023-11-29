@@ -5,7 +5,7 @@ import { WIDTH } from '../constants/Dimension'
 const TextInputComponent = (props) => {
     const { value, onChangeText, placeholder, keyboardType } = props
     return (
-        <View style={{ borderWidth: 1, padding: WIDTH * 0.04, borderRadius: WIDTH * 0.02, margin: 10, width: WIDTH * 0.8 }}>
+        <View style={{ borderWidth: 0.5, padding: WIDTH * 0.04, borderRadius: WIDTH * 0.02, margin: 10, width: WIDTH * 0.8 }}>
             <TextInput
                 value={value}
                 onChangeText={onChangeText}

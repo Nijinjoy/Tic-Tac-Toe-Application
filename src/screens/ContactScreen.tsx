@@ -28,7 +28,7 @@ const realmConfig = {
 };
 
 const ContactScreen = () => {
-    const [profileData, setProfileData] = useState({ username: '', email: '', phone: '', address: '', profileImage: '', gender: 'Male' })
+    const [profileData, setProfileData] = useState({ username: '', email: '', phone: '', address: '', profileImage: [], gender: 'Male' })
     const [gender, setGender] = useState('Male');
 
     const onSubmit = () => {
@@ -44,8 +44,9 @@ const ContactScreen = () => {
         launchImageLibrary(
             {
                 mediaType: 'photo',
-                maxHeight: HEIGHT * 0.05,
-                maxWidth: WIDTH * 0.1
+                maxHeight: HEIGHT * 0.1,
+                includeBase64: false,
+                maxWidth: WIDTH * 0.1,
             },
             (response) => {
                 if (response.didCancel) {
@@ -80,7 +81,7 @@ const ContactScreen = () => {
                                     value={value}
                                     placeholder={`Enter ${key.replace()}`}
                                     onChangeText={(text) => setProfileData({ ...profileData, [key]: text })}
-                                    style={{ borderWidth: 1, padding: WIDTH * 0.034, width: WIDTH * 0.85, marginTop: HEIGHT * 0.02, borderRadius: WIDTH * 0.02 }}
+                                    style={{ borderWidth: 0.5, padding: WIDTH * 0.034, width: WIDTH * 0.85, marginTop: HEIGHT * 0.02, borderRadius: WIDTH * 0.02 }}
                                 />
                             )
                         }

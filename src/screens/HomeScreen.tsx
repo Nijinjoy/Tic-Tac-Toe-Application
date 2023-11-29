@@ -17,21 +17,33 @@ const findWinner = (result) => {
 }
 
 const HomeScreen = () => {
-    const [board, setBoard] = useState(Array(9).fill())
+    const [resetBoard, setResetBoard] = useState(Array(9).fill(''))
+    const [board, setBoard] = useState(resetBoard)
     const [currentPlayer, setCurrentPlayer] = useState("X")
+    const [winner, setWinner] = useState()
 
-    const handleSubmit = (index, value) => {
-        if (!board[index]) {
+    const resetGame = () => {
+        setBoard(resetBoard)
+        setCurrentPlayer("X")
+        setWinner(null)
+    }
+
+    const handleSubmit = (index) => {
+        if (!board[index] && !winner) {
             const newBoard = [...board]
             newBoard[index] = currentPlayer
             setBoard(newBoard)
-            setCurrentPlayer(currentPlayer === "X" ? "O" : "X")
-            const winner = findWinner(newBoard)
-            if (winner) {
-                Alert.alert(`Winner is ${winner}`)
+            const gamewinner = findWinner(newBoard)
+            if (gamewinner) {
+                setWinner(gamewinner)
+                Alert.alert(`Winner is: ${gamewinner}`, 'Game Over', [{ text: 'OK', onPress: resetGame }])
+            }
+            else {
+                setCurrentPlayer(currentPlayer === "X" ? "O" : "X")
             }
         }
     }
+
 
     return (
         <View style={{ flex: 1 }}>
@@ -43,13 +55,13 @@ const HomeScreen = () => {
                         <Pressable
                             key={index}
                             onPress={() => handleSubmit(index)}
-                            style={{ width: WIDTH * 0.16, height: HEIGHT * 0.09, borderWidth: 0.5, justifyContent: "center", alignItems: 'center', backgroundColor: "#9acfdb" }}>
+                            style={{ width: WIDTH * 0.16, height: HEIGHT * 0.09, borderWidth: 1, justifyContent: "center", alignItems: 'center', backgroundColor: "#9acfdb" }}>
                             <Text style={{ fontSize: 25, fontWeight: "bold" }}>{value}</Text>
                         </Pressable>
                     ))
                     }
                 </View>
-                <Text style={{ fontSize: 18, margin: HEIGHT * 0.03 }}>The Winner is:{ }</Text>
+                <Text style={{ fontSize: 18, margin: HEIGHT * 0.03 }}>The Winner is:{winner}</Text>
             </View>
         </View>
     )

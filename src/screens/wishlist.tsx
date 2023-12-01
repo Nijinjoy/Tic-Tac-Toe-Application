@@ -1,4 +1,3 @@
-//use of async
 import { View, Text, Pressable, TextInput, Image, Alert, TouchableOpacity } from 'react-native'
 import React, { useCallback, useEffect, useState } from 'react'
 import HeaderComponent from '../components/HeaderComponent'
@@ -15,7 +14,6 @@ class Profile extends Realm.Object {
         name: 'Profile',
         properties: {
             _id: 'objectId',
-            // profileImage: [],
             profileImage: { type: 'string', default: '' },
             username: 'string',
             email: 'string',
@@ -40,55 +38,33 @@ const ContactScreen = () => {
     console.log('profileDataas==>', profileData);
 
     useEffect(() => {
-        const initializeProfileData = async () => {
-            const storedImageUri = await getProfileImageUri();
-
-            Realm.open(realmConfig)
-                .then((realm) => {
-                    const profile = realm.objects('Profile')[0];
-                    if (profile) {
-                        setProfileData({
-                            username: profile.username,
-                            email: profile.email,
-                            phone: profile.phone.toString(),
-                            address: profile.address,
-                            profileImage: storedImageUri || profile.profileImage,
-                            gender: profile.gender,
-                        });
-                        setGender(profile.gender);
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error opening Realm:', error);
-                });
-        };
-        initializeProfileData();
+        Realm.open(realmConfig)
+            .then((realm) => {
+                const profile = realm.objects('Profile')[0];
+                if (profile) {
+                    setProfileData({
+                        username: profile.username,
+                        email: profile.email,
+                        phone: profile.phone.toString(),
+                        address: profile.address,
+                        profileImage: profile.profileImage,
+                        gender: profile.gender,
+                    });
+                    setGender(profile.gender);
+                }
+            })
+            .catch((error) => {
+                console.error('Error opening Realm:', error);
+            });
     }, []);
 
-    const setProfileImageUri = async (uri) => {
-        try {
-            await AsyncStorage.setItem('profileImageUri', uri);
-        } catch (error) {
-            console.error('Error saving profile image URI:', error);
-        }
-    };
 
-    const getProfileImageUri = async () => {
-        try {
-            const uri = await AsyncStorage.getItem('profileImageUri');
-            return uri;
-        } catch (error) {
-            console.error('Error getting profile image URI:', error);
-            return null;
-        }
-    };
 
 
     const genderSelect = () => {
         const newGender = profileData.gender === 'Male' ? 'Female' : 'Male';
         setProfileData({ ...profileData, gender: newGender });
     };
-
 
     const profileSelect = () => {
         const options = {
@@ -97,6 +73,7 @@ const ContactScreen = () => {
             maxHeight: 200,
             maxWidth: 1000,
         };
+
         launchImageLibrary(options, (response) => {
             if (response.didCancel) {
                 console.log('User cancelled image picker');
@@ -104,10 +81,7 @@ const ContactScreen = () => {
                 console.log('Image picker error: ', response.error);
             } else {
                 let imageUri = response.uri || response.assets?.[0]?.uri;
-                console.log('imageUri:', imageUri);
-
                 setProfileData({ ...profileData, profileImage: imageUri });
-                setProfileImageUri(imageUri);
             }
         });
     };

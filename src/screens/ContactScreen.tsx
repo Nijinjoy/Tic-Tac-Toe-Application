@@ -6,131 +6,49 @@ import { CountryPicker } from 'react-native-country-codes-picker'
 import Realm from 'realm'
 import TextInputComponent from '../components/TextInputComponent'
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { downArrow, profile } from '../assets/images'
+import { profile } from '../assets/images'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-class Profile extends Realm.Object {
-    static schema = {
-        name: 'Profile',
-        properties: {
-            _id: 'objectId',
-            profileImage: { type: 'string', default: '' },
-            username: 'string',
-            email: 'string',
-            phone: 'string',
-            address: 'string',
-            gender: 'string',
-        },
-        primaryKey: '_id',
-    }
-}
-
-const realmConfig = {
-    schema: [Profile],
-};
 
 const ContactScreen = () => {
-    const [profileData, setProfileData] = useState({ username: '', email: '', phone: '', address: '', profileImage: [], gender: 'Male' })
+    const [profileData, setProfileData] = useState({ username: '', email: '', address: '', profileImage: [], gender: 'Male', phone: "", countryCode: "+22" })
     const [validationErrors, setValidationErrors] = useState({});
     const [show, setShow] = useState(false);
-    const [value, setValue] = useState('+974');
-
-    // useEffect(() => {
-    //     Realm.open(realmConfig)
-    //         .then((realm) => {
-    //             const profile = realm.objects('Profile')[0];
-    //             if (profile) {
-    //                 setProfileData({
-    //                     username: profile.username,
-    //                     email: profile.email,
-    //                     phone: profile.phone.toString(),
-    //                     address: profile.address,
-    //                     profileImage: profile.profileImage,
-    //                     gender: profile.gender,
-    //                 });
-    //                 setGender(profile.gender);
-    //             }
-    //         })
-    //         .catch((error) => {
-    //             console.error('Error opening Realm:', error);
-    //         });
-    // }, []);
+    const navigation = useNavigation()
 
     useEffect(() => {
-        const initializeProfileData = async () => {
-            const storedImageUri = await getProfileImageUri();
+        setTimeout(() => {
+            navigation.navigate('AnimationScreen')
+        }, 2000);
+    }, [])
 
-            Realm.open(realmConfig)
-                .then((realm) => {
-                    const profile = realm.objects('Profile')[0];
-                    if (profile) {
-                        setProfileData({
-                            username: profile.username,
-                            email: profile.email,
-                            phone: profile.phone.toString(),
-                            address: profile.address,
-                            profileImage: storedImageUri || profile.profileImage,
-                            gender: profile.gender,
-                        });
-                        setGender(profile.gender);
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error opening Realm:', error);
-                });
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const savedProfileData = await AsyncStorage.getItem('profileData');
+                if (savedProfileData) {
+                    setProfileData(JSON.parse(savedProfileData));
+                }
+            } catch (error) {
+                console.error('Error fetching data from AsyncStorage:', error);
+            }
         };
-        initializeProfileData();
+        fetchData();
     }, []);
-
-    const setProfileImageUri = async (uri) => {
-        try {
-            await AsyncStorage.setItem('profileImageUri', uri);
-        } catch (error) {
-            console.error('Error saving profile image URI:', error);
-        }
-    };
-
-    const getProfileImageUri = async () => {
-        try {
-            const uri = await AsyncStorage.getItem('profileImageUri');
-            return uri;
-        } catch (error) {
-            console.error('Error getting profile image URI:', error);
-            return null;
-        }
-    };
 
     const genderSelect = () => {
         const newGender = profileData.gender === 'Male' ? 'Female' : 'Male';
         setProfileData({ ...profileData, gender: newGender });
     };
 
-    // const profileSelect = () => {
-    //     const options = {
-    //         mediaType: 'photo',
-    //         includeBase64: false,
-    //         maxHeight: 200,
-    //         maxWidth: 1000,
-    //     };
-    //     launchImageLibrary(options, (response) => {
-    //         if (response.didCancel) {
-    //             console.log('User cancelled image picker');
-    //         } else if (response.error) {
-    //             console.log('Image picker error: ', response.error);
-    //         } else {
-    //             let imageUri = response.uri || response.assets?.[0]?.uri;
-    //             setProfileData({ ...profileData, profileImage: imageUri });
-    //         }
-    //     });
-    // };
-
-    const profileSelect = () => {
+    const profileSelect = (useCamera) => {
         const options = {
             mediaType: 'photo',
             includeBase64: false,
             maxHeight: 200,
             maxWidth: 1000,
         };
+        const imagePicker = useCamera ? launchCamera : launchImageLibrary
         launchImageLibrary(options, (response) => {
             if (response.didCancel) {
                 console.log('User cancelled image picker');
@@ -138,13 +56,11 @@ const ContactScreen = () => {
                 console.log('Image picker error: ', response.error);
             } else {
                 let imageUri = response.uri || response.assets?.[0]?.uri;
-                console.log('imageUri:', imageUri);
-
                 setProfileData({ ...profileData, profileImage: imageUri });
-                setProfileImageUri(imageUri);
             }
         });
     };
+
 
     const validateInputs = () => {
         const errors = {};
@@ -158,43 +74,104 @@ const ContactScreen = () => {
         } else if (!/\S+@\S+\.\S+/.test(profileData.email)) {
             errors.email = 'Email is invalid.';
         }
+        if (!profileData.phone) {
+            errors.phone = 'Phone number is required';
+        } else if (profileData.phone.length !== 10) {
+            errors.phone = 'Phone number must have 10 digits'
+        }
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
 
 
-    const onSubmit = useCallback(() => {
+    const onSubmit = useCallback(async () => {
         if (validateInputs()) {
-            Realm.open(realmConfig)
-                .then((realm) => {
-                    realm.write(() => {
-                        const newProfileData = {
-                            _id: new Realm.BSON.ObjectId(),
-                            profileImage: profileData.profileImage || '',
-                            username: profileData.username,
-                            email: profileData.email,
-                            phone: profileData.phone.toString(),
-                            address: profileData.address,
-                            gender: profileData.gender || 'Male',
-                        };
-                        realm.create('Profile', newProfileData, true);
-                    });
-                    Alert.alert('Success', 'Profile data submitted successfully');
-                })
-                .catch((error) => {
-                    console.error('Error submitting profile data to Realm:', error);
-                    Alert.alert('Error', 'Failed to submit profile data. Please try again. ' + error.message);
-                });
+            try {
+                await AsyncStorage.setItem('profileData', JSON.stringify(profileData));
+                Alert.alert('Success', 'Profile data submitted successfull');
+            } catch (error) {
+                console.error('Error submitting profile data to AsyncStorage:', error);
+                Alert.alert('Error', 'Failed to submit profile data. Please try again. ' + error.message);
+            }
         }
     }, [profileData]);
 
+    const renderTextInput = (key, value) => {
+        switch (key) {
+            case 'profileImage':
+            case 'gender':
+                return null;
+            case 'email':
+            case 'username':
+            case 'address':
+                return (
+                    <View key={key}>
+                        <TextInputComponent
+                            key={key}
+                            value={value}
+                            placeholder={`Enter ${key.replace()}`}
+                            onChangeText={(text) => {
+                                setProfileData({ ...profileData, [key]: text });
+                                setValidationErrors((prevErrors) => {
+                                    const newErrors = { ...prevErrors };
+                                    delete newErrors[key];
+                                    return newErrors;
+                                });
+                            }}
+                            style={{ borderWidth: 0.5, padding: WIDTH * 0.034, width: WIDTH * 0.85, marginTop: HEIGHT * 0.02, borderRadius: WIDTH * 0.02 }}
+                        />
+                        {validationErrors[key] && (
+                            <Text style={{ color: 'red', marginLeft: WIDTH * 0.04, fontSize: 14 }}>{validationErrors[key]}</Text>
+                        )}
+                    </View>
+                );
+            case 'phone':
+                return (
+                    <View>
+                        <View key={key} style={{ flexDirection: "row", borderWidth: 0.5, padding: WIDTH * 0.03, width: WIDTH * 0.8, alignSelf: "center", borderRadius: WIDTH * 0.02 }}>
+                            <TouchableOpacity onPress={() => setShow(true)}>
+                                <View>
+                                    <Text style={{ fontSize: 15 }}>{profileData?.countryCode}</Text>
+                                </View>
+                            </TouchableOpacity>
+                            <CountryPicker
+                                style={{ modal: { height: HEIGHT * 0.62 } }}
+                                onBackdropPress={() => setShow(false)}
+                                show={show}
+                                pickerButtonOnPress={(item) => {
+                                    setProfileData({ ...profileData, countryCode: item?.dial_code });
+                                    setShow(false);
+                                }}
+                            />
+                            <TextInput
+                                value={profileData.phone}
+                                onChangeText={(text) => {
+                                    setProfileData({ ...profileData, phone: text });
+                                    setValidationErrors((prevErrors) => {
+                                        const newErrors = { ...prevErrors };
+                                        delete newErrors['phone'];
+                                        return newErrors;
+                                    });
+                                }}
+                                keyboardType="numeric"
+                                placeholder='Enter Phone Number'
+                                style={{ fontSize: 15, marginHorizontal: WIDTH * 0.03 }}
+                            />
+                        </View>
+                        {validationErrors.phone && (
+                            <Text style={{ color: 'red', fontSize: 14, marginLeft: WIDTH * 0.04 }}>{validationErrors.phone}</Text>
+                        )}
+                    </View>
+                );
+        }
+    };
 
     return (
         <View style={{ flex: 1, }}>
-            <HeaderComponent title="Contact Us" reset="Reset" />
+            <HeaderComponent title="Contact Us" />
             <View style={{ justifyContent: "center", alignItems: "center", margin: HEIGHT * 0.02 }}>
 
-                <View style={{ borderWidth: 0.5, padding: HEIGHT * 0.005, borderRadius: HEIGHT, justifyContent: "center", alignItems: "center" }}>
+                <View style={{ borderWidth: 1, padding: HEIGHT * 0.005, borderRadius: HEIGHT, justifyContent: "center", alignItems: "center" }}>
                     <Image source={profileData.profileImage ? { uri: profileData.profileImage } : profile} style={{ width: WIDTH * 0.23, height: HEIGHT * 0.13, borderRadius: WIDTH }} />
                 </View>
 
@@ -203,64 +180,8 @@ const ContactScreen = () => {
                 </Pressable >
 
                 <View style={{ marginTop: HEIGHT * 0.04 }}>
-                    {
-                        Object.entries(profileData).map(([key, value]) => {
-                            if (key !== 'profileImage' && key !== 'gender' && key !== 'phone') {
-                                return (
-                                    <View key={key}>
-                                        <TextInputComponent
-                                            key={key}
-                                            value={value}
-                                            placeholder={`Enter ${key.replace()}`}
-                                            onChangeText={(text) => {
-                                                setProfileData({ ...profileData, [key]: text });
-                                                setValidationErrors((prevErrors) => {
-                                                    const newErrors = { ...prevErrors };
-                                                    delete newErrors[key];
-                                                    return newErrors;
-                                                });
-                                            }}
-                                            style={{ borderWidth: 0.5, padding: WIDTH * 0.034, width: WIDTH * 0.85, marginTop: HEIGHT * 0.02, borderRadius: WIDTH * 0.02 }}
-                                        />
-                                        {validationErrors[key] && (
-                                            <Text style={{ color: 'red', marginLeft: WIDTH * 0.04, fontSize: 14 }}>{validationErrors[key]}</Text>
-                                        )}
-                                    </View>
-                                )
-                            }
-                        })
-                    }
+                    {Object.entries(profileData).map(([key, value]) => renderTextInput(key, value))}
                 </View>
-
-                <View style={{ flexDirection: 'row', borderWidth: 0.5, width: WIDTH * 0.8, padding: WIDTH * 0.02, borderRadius: WIDTH * 0.02, marginTop: HEIGHT * 0.02 }}>
-                    <TouchableOpacity onPress={() => setShow(true)} style={{ flexDirection: "row", alignItems: "center" }}>
-                        <View >
-                            <Text style={{ fontSize: 15 }}>{value}</Text>
-                        </View>
-                        <Image source={downArrow} style={{ width: WIDTH * 0.04, height: HEIGHT * 0.02, borderRadius: WIDTH * 0.02, marginLeft: WIDTH * 0.01 }} />
-                    </TouchableOpacity>
-                    <Pressable>
-                        <CountryPicker
-                            style={{ modal: { height: HEIGHT * 0.5, }, }}
-                            onBackdropPress={() => setShow(false)}
-                            show={show}
-                            pickerButtonOnPress={(item) => {
-                                setValue(item?.dial_code);
-                                setShow(false);
-                            }}
-                        />
-                    </Pressable>
-                    <View>
-                        <TextInput
-                            value={profileData.phone}
-                            onChangeText={(text) => setProfileData({ ...profileData, phone: text })}
-                            keyboardType="numeric"
-                            placeholder='Enter Phone Number'
-                            style={{ fontSize: 15, marginHorizontal: WIDTH * 0.03 }}
-                        />
-                    </View>
-                </View>
-
                 {/* Gender Toggle Switch */}
                 <Text style={{ fontSize: 18, margin: HEIGHT * 0.01 }}>Gender</Text>
                 <Pressable style={{ width: WIDTH * 0.8, flexDirection: 'row', margin: HEIGHT * 0.02 }} onPress={genderSelect}>
@@ -281,4 +202,6 @@ const ContactScreen = () => {
     )
 }
 
+
 export default ContactScreen
+
